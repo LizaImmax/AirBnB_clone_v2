@@ -1,35 +1,36 @@
 #!/usr/bin/python3
-#  Fabric script that generates a .tgz archive from the
-# contents of the web_static folder of your AirBnB Clone repo
-# using the function do_pack
-import os
-from fabric.api import run, put, env
+""" 0x03. AirBnB clone - Deploy static, task 2. Deploy archive!
+"""
+from fabric.api import env, put, run
+from os import path
 
 env.hosts = ['107.21.38.138', '100.25.132.126']
-env.user = "ubuntu"
+env.user = 'ubuntu'
 
 
 def do_deploy(archive_path):
-    """Create a tar gzipped archive of the directory web_static."""
-    if os.path.exists(archive_path) is False:
+    """ Distributes a .tgz archive from the contents of `web_static/` in AirBnB
+    clone repo to the web servers
+
+    Retruns:
+        (bool): `True` if all operations successful, `False` otherwise
+    """
+    if not path.exists(archive_path) or archive_path is None:
         return False
-    else:
-        try:
-            put(archive_path, "/tmp/")
-            """ putting the file to .tgz """
-            file_name = archive_path.split("/")[1]
-            """ splitting .tgz """
-            file_name2 = file_name.split(".")[0]
-            """ spliting archivo """
-            final_name = "/data/web_static/releases/" + file_name2 + "/"
-            run("mkdir -p " + final_name)
-            run("tar -xzf /tmp/" + file_name + " -C " + final_name)
-            run("rm /tmp/" + file_name)
-            run("mv " + final_name + "web_static/* " + final_name)
-            run("rm -rf " + final_name + "web_static")
-            run("rm -rf /data/web_static/current")
-            run("ln -s " + final_name + " /data/web_static/current")
-            print("New version deployed!")
-            return True
-        except Exception:
-            return False
+
+    f_name = path.basename(archive_path)
+    d_name = f_name.split('.')[0]
+
+    put(local_path=archive_path, remote_path='/tmp/')
+    run('mkdir -p /data/web_static/releases/{}/'.format(d_name))
+    run('tar -xzf /tmp/{} -C /data/web_static/releases/{}/'.format(
+        f_name, d_name))
+    run('rm /tmp/{}'.format(f_name))
+    run('mv /data/web_static/releases/{}/web_static/* '.format(d_name) +
+        '/data/web_static/releases/{}/'.format(d_name))
+    run('rm -rf /data/web_static/releases/{}/web_static'.format(d_name))
+    run('rm -rf /data/web_static/current')
+    run('ln -s /data/web_static/releases/{}/ /data/web_static/current'.format(
+        d_name))
+
+    return True
